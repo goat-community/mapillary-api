@@ -3,17 +3,25 @@ Created on Wed Dec 23 2020
 
 @author: gregoriiv
 """
+# function returns objects from Mapillary API for given shapefile
+# --variables-- #
+# path - path to shapefile
+# fact - factor for disaggregation boundingbox of shapefile in degrees (ex. 0.02)
+# values - reference values you'd like here, separate multiple by comma, leave empty quotes to get all values from Mapillary docs
+# (ex. 'regulatory--priority-road--g1') https://www.mapillary.com/developer/api-documentation/#traffic-signs
+# max_score/min_score -  (ex. 0/1) percentage of object we are looking for in each image in Mapillary database
+# token - token from Mapillary API for authorized request 
+# layers - choose 'trafficsigns' or 'points' or 'lines'
 
 def MappilaryObjFromStudyArea(path, fact, values, client_id, min_score, max_score, token, layers):
 
-    import json, requests
-    import shapefile as sf
-    import math
+    import json
     import os
     import time
     
     def Object_Detection(bbox, values, client_id, max_score, min_score, token, layers, filename):
 
+        import json, requests
         """
         Created on Fri Nov  6 13:17:06 2020
         @author: Santiago
@@ -82,6 +90,9 @@ def MappilaryObjFromStudyArea(path, fact, values, client_id, min_score, max_scor
     # Function takes path of shp file and minimal length of small bbox side in degrees,
     # returns bbox coordinates in string data format readable in Mapillary API
     def Shp2Bbox(path, fact):
+
+        import math
+        import shapefile as sf
 
         # Function create subbboxes out of large bbox
         def sub_bboxes(fact_lon, fact_lat, wlim, slim, elim, nlim):
