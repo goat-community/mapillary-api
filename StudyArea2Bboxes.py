@@ -32,18 +32,22 @@ def Shp2Bbox(path, fact):
     bb_ar_fact = fact * fact
     # getting shapefile
     shpf = sf.Reader(path)
-    # getting bbox
-    shp_bb = shpf.bbox.tolist()
-    #bbox area calculation
-    bb_ar = (shp_bb[2] - shp_bb[0]) * (shp_bb[3] - shp_bb[1])
-    #split bbox to smaller equal boxes
-    if bb_ar > bb_ar_fact:
-        fact_lat = math.ceil((shp_bb[2] - shp_bb[0]) / fact)
-        fact_lon = math.ceil((shp_bb[3] - shp_bb[1]) / fact)
-        bboxes_coords = sub_bboxes(fact_lon, fact_lat, shp_bb[0], shp_bb[1], shp_bb[2], shp_bb[3])
-        for bb in bboxes_coords:
-            bboxes.append(', '.join(str(b) for b in bb))
+    # check if shapefile contains POLYGON entities
+    if shpf.shapeType == sf.POLYGON:
+        # getting bbox
+        shp_bb = shpf.bbox.tolist()
+        #bbox area calculation
+        bb_ar = (shp_bb[2] - shp_bb[0]) * (shp_bb[3] - shp_bb[1])
+        #split bbox to smaller equal boxes
+        if bb_ar > bb_ar_fact:
+            fact_lat = math.ceil((shp_bb[2] - shp_bb[0]) / fact)
+            fact_lon = math.ceil((shp_bb[3] - shp_bb[1]) / fact)
+            bboxes_coords = sub_bboxes(fact_lon, fact_lat, shp_bb[0], shp_bb[1], shp_bb[2], shp_bb[3])
+            for bb in bboxes_coords:
+                bboxes.append(', '.join(str(b) for b in bb))
+        else:
+            bboxes.append(', '.join(str(b) for b in shp_bb))
     else:
-        bboxes.append(', '.join(str(b) for b in shp_bb))
+        raise Exception('Type of shapes in shapefile is not POLYGON!')
 
     return bboxes

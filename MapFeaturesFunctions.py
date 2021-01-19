@@ -79,13 +79,13 @@ def MappilaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers)
 
     # create filename for result geojson file from 'values' variable
     if type(values) == tuple:
-        filename = '_'.join(values)
+        filename_fin = '_'.join(values)
     else:
-        filename = values
+        filename_fin = values
     
     # create result geojson
     output_result = {"type": "FeatureCollection", "features": []}
-    with open(filename + '.geojson', 'w') as outfile:
+    with open(filename_fin + '.geojson', 'w') as outfile:
         json.dump(output_result, outfile)
 
     # disaggregate bbox of shapefile to grid of bboxes
@@ -101,15 +101,15 @@ def MappilaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers)
         with open('request.geojson') as r:
             request = json.load(r)
         # open result.geojson
-        with open(filename +'.geojson') as res:
+        with open(filename_fin +'.geojson') as res:
             result = json.load(res)
         # append features form request.geojson to result.geojson
         for f in request['features']:
             result['features'].append(f)
         # write down new result.geojson
-        with open(filename +'.geojson', 'w') as outfile:
+        with open(filename_fin +'.geojson', 'w') as outfile:
             json.dump(result, outfile)
-        print(filename +'.UPDATED')
+        print(filename_fin +'.UPDATED')
         # remove request.geojson
         os.remove('request.geojson')
         # sleep for 1 minute
