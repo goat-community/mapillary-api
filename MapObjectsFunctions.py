@@ -78,7 +78,7 @@ Created on Wed Dec 23 2020
 # token - token from Mapillary API for authorized request 
 # layers - choose 'trafficsigns' or 'points' or 'lines'
 
-def MappilaryObjFromStudyArea(path, fact, values, client_id, min_score, max_score, token, layers):
+def MapillaryObjFromStudyArea(path, fact, values, client_id, min_score, max_score, token, layers):
 
     import json
     import os

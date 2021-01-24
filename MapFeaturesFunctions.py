@@ -70,7 +70,7 @@ Created on Fri Jan 08 2021
 # token - token from Mapillary API for authorized request 
 # layers - choose 'trafficsigns' or 'points' or 'lines'
 
-def MappilaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers):
+def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers):
 
     import json
     import os
