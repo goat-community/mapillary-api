@@ -56,7 +56,8 @@ def GetFeatures(bbox,values, client_id, token, layers, filename):
         print('DONE')
         json.dump(output, outfile)
     
-    """
+    
+"""
 Created on Fri Jan 08 2021
 
 @author: gregoriiv
@@ -70,7 +71,7 @@ Created on Fri Jan 08 2021
 # token - token from Mapillary API for authorized request 
 # layers - choose 'trafficsigns' or 'points' or 'lines'
 
-def MappilaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers):
+def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers):
 
     import json
     import os
@@ -78,14 +79,11 @@ def MappilaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers)
     import StudyArea2Bboxes
 
     # create filename for result geojson file from 'values' variable
-    if type(values) == tuple:
-        filename_fin = '_'.join(values)
-    else:
-        filename_fin = values
-    
+    filename_fin = values
+    dir_feat = 'data/features'
     # create result geojson
     output_result = {"type": "FeatureCollection", "features": []}
-    with open(filename_fin + '.geojson', 'w') as outfile:
+    with open(dir_feat + '/' + filename_fin + '.geojson', 'w') as outfile:
         json.dump(output_result, outfile)
 
     # disaggregate bbox of shapefile to grid of bboxes
@@ -101,18 +99,64 @@ def MappilaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers)
         with open('request.geojson') as r:
             request = json.load(r)
         # open result.geojson
-        with open(filename_fin +'.geojson') as res:
+        with open(dir_feat + '/' + filename_fin +'.geojson') as res:
             result = json.load(res)
         # append features form request.geojson to result.geojson
         for f in request['features']:
             result['features'].append(f)
         # write down new result.geojson
-        with open(filename_fin +'.geojson', 'w') as outfile:
+        with open(dir_feat + '/' + filename_fin +'.geojson', 'w') as outfile:
             json.dump(result, outfile)
         print(filename_fin +'.UPDATED')
         # remove request.geojson
         os.remove('request.geojson')
         # sleep for 1 minute
-        time.sleep(60)
+        #time.sleep(60) #60sec
 
     return print('DONE')
+
+
+"""
+Created on Sun Jan 24 2021
+
+@author: gregoriiv
+"""
+# fuction returns geojson with features, set of value been requested for given shapefile 
+def MapillaryMultiFeaturesRequest(path, fact, client_id, token):
+
+    import Config_request
+    import json, os
+
+    #create directory 'data' if not exists
+    dir_feat = 'data/features'
+    if not os.path.exists(dir_feat):
+        os.mkdir(dir_feat)
+    
+    #save backup data existed lines\points??
+
+    #create result files for each group of features with name of group
+    for v_cat in Config_request.custom_feature_set:
+        if len(Config_request.custom_feature_set[v_cat]) > 0:
+            output_val_cat = {"type": "FeatureCollection", "features": []}
+            with open(dir_feat + '/' + v_cat + '.geojson', 'w') as outfile:
+                json.dump(output_val_cat, outfile)
+
+            # make request for each feature in each group
+            for feature in Config_request.custom_feature_set[v_cat]:
+                MapillaryFeaturesFromStudyArea(path, fact, feature, client_id, token, v_cat)
+
+                # open request.geojson
+                with open(dir_feat + '/' + feature + '.geojson') as r:
+                    request = json.load(r)
+                # open result.geojson
+                with open(dir_feat + '/' + v_cat +'.geojson') as res:
+                    result = json.load(res)
+                # append features form request.geojson to result.geojson
+                for f in request['features']:
+                    result['features'].append(f)
+                # write down new result.geojson
+                with open(dir_feat + '/' + v_cat +'.geojson', 'w') as outfile:
+                    json.dump(result, outfile)
+                print(v_cat +'.UPDATED')
+                # remove request.geojson
+                os.remove(dir_feat + '/' + feature + '.geojson')
