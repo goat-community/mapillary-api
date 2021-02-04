@@ -71,7 +71,7 @@ Created on Fri Jan 08 2021
 # token - token from Mapillary API for authorized request 
 # layers - choose 'trafficsigns' or 'points' or 'lines'
 
-def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers):
+def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers, dir_feat):
 
     import json
     import os
@@ -80,7 +80,7 @@ def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers)
 
     # create filename for result geojson file from 'values' variable
     filename_fin = values
-    dir_feat = 'data/features'
+   
     # create result geojson
     output_result = {"type": "FeatureCollection", "features": []}
     with open(dir_feat + '/' + filename_fin + '.geojson', 'w') as outfile:
@@ -122,41 +122,55 @@ Created on Sun Jan 24 2021
 @author: gregoriiv
 """
 # fuction returns geojson with features, set of value been requested for given shapefile 
-def MapillaryMultiFeaturesRequest(path, fact, client_id, token):
+def MapillaryMultiFeaturesRequest(client_id, token):
 
-    import Config_request
     import json, os
+    import yaml
+
+    #import data from config.yaml
+    with open('mapil_request_config.yaml') as m:
+        config = yaml.safe_load(m)
+
+    var = config['VARIABLES_SET']
 
     #create directory 'data' if not exists
-    dir_feat = 'data/features'
-    if not os.path.exists(dir_feat):
-        os.mkdir(dir_feat)
-    
-    #save backup data existed lines\points??
+    for area in var:
+        dir_main = 'data/' + area
+        if not os.path.exists(dir_main):
+            os.mkdir(dir_main)
+        dir_feat = dir_main + '/features'
+        if not os.path.exists(dir_feat):
+            os.mkdir(dir_feat)
+ 
+        #set variables from config yaml
+        fact = var[area]['fact']
+        path = var[area]['path']
 
-    #create result files for each group of features with name of group
-    for v_cat in Config_request.custom_feature_set:
-        if len(Config_request.custom_feature_set[v_cat]) > 0:
-            output_val_cat = {"type": "FeatureCollection", "features": []}
-            with open(dir_feat + '/' + v_cat + '.geojson', 'w') as outfile:
-                json.dump(output_val_cat, outfile)
+        #save backup data existed lines\points??
 
-            # make request for each feature in each group
-            for feature in Config_request.custom_feature_set[v_cat]:
-                MapillaryFeaturesFromStudyArea(path, fact, feature, client_id, token, v_cat)
+        #create result files for each group of features with name of group
+        for v_cat in var[area]['custom_feature_set']:
+            if len(var[area]['custom_feature_set'][v_cat]) > 0:
+                output_val_cat = {"type": "FeatureCollection", "features": []}
+                with open(dir_feat + '/' + v_cat + '.geojson', 'w') as outfile:
+                    json.dump(output_val_cat, outfile)
 
-                # open request.geojson
-                with open(dir_feat + '/' + feature + '.geojson') as r:
-                    request = json.load(r)
-                # open result.geojson
-                with open(dir_feat + '/' + v_cat +'.geojson') as res:
-                    result = json.load(res)
-                # append features form request.geojson to result.geojson
-                for f in request['features']:
-                    result['features'].append(f)
-                # write down new result.geojson
-                with open(dir_feat + '/' + v_cat +'.geojson', 'w') as outfile:
-                    json.dump(result, outfile)
-                print(v_cat +'.UPDATED')
-                # remove request.geojson
-                os.remove(dir_feat + '/' + feature + '.geojson')
+                # make request for each feature in each group
+                for feature in var[area]['custom_feature_set'][v_cat]:
+                    MapillaryFeaturesFromStudyArea(path, fact, feature, client_id, token, v_cat, dir_feat)
+
+                    # open request.geojson
+                    with open(dir_feat + '/' + feature + '.geojson') as r:
+                        request = json.load(r)
+                    # open result.geojson
+                    with open(dir_feat + '/' + v_cat +'.geojson') as res:
+                        result = json.load(res)
+                    # append features form request.geojson to result.geojson
+                    for f in request['features']:
+                        result['features'].append(f)
+                    # write down new result.geojson
+                    with open(dir_feat + '/' + v_cat +'.geojson', 'w') as outfile:
+                        json.dump(result, outfile)
+                    print(v_cat +'.UPDATED')
+                    # remove request.geojson
+                    os.remove(dir_feat + '/' + feature + '.geojson')
