@@ -1,28 +1,44 @@
-# mapillary-api
-This repository will contain a series of scripts, that collect information from the Mapillary API
+# Mapillary-API
+HowTo for Mapillary-API
 
-## Set of features for requests in Mapillary API 
- https://www.mapillary.com/developer/api-documentation/#traffic-signs
+## STEP1: Create set of variables
+### Structure of mapil_request_config.yaml
+Request for each study area should be saved in form of set of variables.
+```yaml
+VARIABLES_SET:
+  City_Name_1:
+    custom_feature_set : 
+      trafficsigns : ["trafficsign-1", "trafficsign-2"]
+      points : ["point-1", "point-2"]
+      lines : ["line-1"]
 
-# Set of all features related to Germany(trafficsigns may vary depending on country) This set is for Germany
-keys:
-> traffic_signs (for Germany)
->> groups:
->>> regulatory
->>> information
->>> warning
->>> complementary
-> objects
->> points:
->>> construction--(barrier--temporary, crosswalk-plain, driveway)
->>> marking--(descrete--(stop-line, arrow--straight, crosswalk-zebra, etc.))
->>> object--(bench, mailbox, street-light, trash-can, etc.)
-> lines
->> groups:
->>> construction--(barrier--(curb, fence, etc.), flat--(parking, sidewalk, bike-lane, etc.))
->>> marking--(continious--(dashed,solid))
->>> nature--(snow, vegetation, water)
+    custom_object_set :
+      trafficsigns : ["trafficsign-1", "trafficsign-2"]
+      instances : ["instance-1"]
+      segmentations : ["segmentation-1"]
+    
+    min_score : 0.7
+    max_score : 1
 
+    fact : 0.035
+    path : 'path_of_shapefile'
+  City_Name_2:
+    ....
+    ....
+```
+### Variables 
+**City_Name_1** - name of study area, it will be used as folder name for output data storage.(don't use spaces in naming)
+**custom_feature_set** - set of _features_ which will be used in request to Mapillary database. _Features_ - is a real world objects placed on the Mapillary map. It could be any object detected in images, manually added in images, or added on the map.
+Map features are groupped into the following layers:
+>**trafficsigns** - Traffic signs that are recognized from trafficsigns detections. May vary depending on country. A traffic sign value represents a specific traffic sign type or class. The traffic sign values follow a naming convention:
+{category}--{name-of-the-traffic-sign}--{appearance-group}
+_Categories_ summarize the signs by their higher level type, namely: _regulatory, information, warning, complementary_. The _appearance-group_ represents variations of the same sign in different countries or regions.
+>**points** - Point features that are recognized from instances detections.
+>**lines** - Line features that are recognized from segmentations detections as lines. The values from lines set of values can be used.
+For each study area it is neccessary create individual feature set. 
+Additional information about variables could be used for request stored in mapillary official site. https://www.mapillary.com/developer/api-documentation/
+
+Example of full feature set (trafficsigns for Germany):
 ``` full_feature_set
 full_feature_set = {
     "trafficsigns" : ["regulatory--bicycles-only--g1","regulatory--dual-path-bicycles-and-pedestrians--g1",
@@ -44,28 +60,14 @@ full_feature_set = {
 }
 ```
 
-# Set of all objects (from images Mapillary database), (trafficsigns may vary deneding on country (this set related to Germany))
-Documentation can be find here: https://www.mapillary.com/developer/api-documentation/#traffic-signs
- keys:
-> traffic_signs (for Germany)
->> groups:
->>> regulatory
->>> information
->>> warning
->>> complementary
-> instances
->> points:
->>> construction--(barrier--temporary, crosswalk-plain, driveway)
->>> marking--(descrete--(stop-line, arrow--straight, crosswalk-zebra, etc.))
->>> object--(bench, mailbox, street-light, trash-can, etc.)
-> segmentations
->> groups:
->>> animal--(bird, ground-animal)
->>> construction--(barrier--(curb, fence, etc.), flat--(parking, sidewalk, bike-lane, etc.))
->>> marking--(continious--(dashed,solid))
->>> nature--(snow, vegetation, water, etc.)
->>> object--(bench, bike-rack, etc)
+**custom_object_set** - set of _objects detections_ which will be used in request to Mapillary database. _An object detection_ is a semantic pixel area or point in an image. The area could indicate fire cars, fire hydrants, sky, trees, sidewalk in the image. A detection can be a polygon, a bounding box, or a point in an image. 
+Map object detections are groupped into the following layers:
+>**trafficsigns** - Traffic signs that are recognized from trafficsigns detections. May vary depending on country. They are the same as for _features_.
+>**instances** - Values can be chosen from the points value set. The same as points values in _features_.
+>**segmentations** - Values can be chosen from segmentation values data set.
+Additional information about variables could be used for request stored in mapillary official site. https://www.mapillary.com/developer/api-documentation/
 
+Example of full object set (trafficsigns for Germany):
 ``` full_object_set
 full_object_set = {
     "trafficsigns" : ["regulatory--bicycles-only--g1", "regulatory--dual-path-bicycles-and-pedestrians--g1",
@@ -98,3 +100,11 @@ full_object_set = {
                         ]
 }
 ```
+
+**min_score** - Related to object detection. Minimum score of normalized probability of the object detection in image. Value in range (0, 1).Should be lower then **max_score**. Recommended value **0.7**.
+**max_score** - Related to object detection. Maximum score of normalized probability of the object detection in image. Value in range (0, 1).Should be higher then **min_score**. Recommended value **1**.
+**fact** : Factor for disaggregation of bounding box of study area. Maximum length of the side of the cell in the formed grid. Counted in grad. Depending on the number of requested objects and features, the saturation of the study area with them, the request can be excessively large and excessively can load the Mapillari server. To avoid this, the request area is divided into equal parts and requests are sent for each of them separately, using breaks between them. Depending on the input data, the factor should be adjusted up or down. Default value **0.035**
+**path** - Is a path to shapefile of study area. Should be presented without extension at the end.
+
+### Result of request
+Result file of request will be stored in folder **data/City_Name_1/..**. Inside the main directory with the name of the study area there will be two folders _features_ and _objects_ with geojson files with layer names from queries for features and objects.
