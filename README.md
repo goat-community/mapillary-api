@@ -23,19 +23,26 @@ VARIABLES_SET:
     fact : 0.035
     path : 'path_of_shapefile'
   City_Name_2:
+      custom_feature_set : 
+        trafficsigns : [ ...
     ....
     ....
 ```
 ### Variables 
 **City_Name_1** - name of study area, it will be used as folder name for output data storage.(don't use spaces in naming)
+
 **custom_feature_set** - set of _features_ which will be used in request to Mapillary database. _Features_ - is a real world objects placed on the Mapillary map. It could be any object detected in images, manually added in images, or added on the map.
+
 Map features are groupped into the following layers:
 >**trafficsigns** - Traffic signs that are recognized from trafficsigns detections. May vary depending on country. A traffic sign value represents a specific traffic sign type or class. The traffic sign values follow a naming convention:
 {category}--{name-of-the-traffic-sign}--{appearance-group}
 _Categories_ summarize the signs by their higher level type, namely: _regulatory, information, warning, complementary_. The _appearance-group_ represents variations of the same sign in different countries or regions.
+
 >**points** - Point features that are recognized from instances detections.
+
 >**lines** - Line features that are recognized from segmentations detections as lines. The values from lines set of values can be used.
 For each study area it is neccessary create individual feature set. 
+
 Additional information about variables could be used for request stored in mapillary official site. https://www.mapillary.com/developer/api-documentation/
 
 Example of full feature set (trafficsigns for Germany):
@@ -60,10 +67,13 @@ full_feature_set = {
 }
 ```
 
-**custom_object_set** - set of _objects detections_ which will be used in request to Mapillary database. _An object detection_ is a semantic pixel area or point in an image. The area could indicate fire cars, fire hydrants, sky, trees, sidewalk in the image. A detection can be a polygon, a bounding box, or a point in an image. 
+**custom_object_set** - set of _objects detections_ which will be used in request to Mapillary database. _An object detection_ is a semantic pixel area or point in an image. The area could indicate fire cars, fire hydrants, sky, trees, sidewalk in the image. A detection can be a polygon, a bounding box, or a point in an image.
+
 Map object detections are groupped into the following layers:
 >**trafficsigns** - Traffic signs that are recognized from trafficsigns detections. May vary depending on country. They are the same as for _features_.
+
 >**instances** - Values can be chosen from the points value set. The same as points values in _features_.
+
 >**segmentations** - Values can be chosen from segmentation values data set.
 Additional information about variables could be used for request stored in mapillary official site. https://www.mapillary.com/developer/api-documentation/
 
@@ -102,8 +112,11 @@ full_object_set = {
 ```
 
 **min_score** - Related to object detection. Minimum score of normalized probability of the object detection in image. Value in range (0, 1).Should be lower then **max_score**. Recommended value **0.7**.
+
 **max_score** - Related to object detection. Maximum score of normalized probability of the object detection in image. Value in range (0, 1).Should be higher then **min_score**. Recommended value **1**.
+
 **fact** : Factor for disaggregation of bounding box of study area. Maximum length of the side of the cell in the formed grid. Counted in grad. Depending on the number of requested objects and features, the saturation of the study area with them, the request can be excessively large and excessively can load the Mapillari server. To avoid this, the request area is divided into equal parts and requests are sent for each of them separately, using breaks between them. Depending on the input data, the factor should be adjusted up or down. Default value **0.035**
+
 **path** - Is a path to shapefile of study area. Should be presented without extension at the end.
 
 ### Result of request
