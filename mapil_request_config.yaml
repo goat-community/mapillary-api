@@ -1,0 +1,41 @@
+# Create you own VARIABLES_SET -> subset here, keep the structure
+# Give the name for subset, usually name of study  area
+# The Folder with subset name will be created
+# Assign to the path variable path to study_area shapefile
+
+VARIABLES_SET: 
+  #set for Munich area
+  Munich:
+    custom_feature_set : 
+      trafficsigns : ["information--disabled-persons--g1", "information--disabled-persons--g2"]
+      points : ["object--bench", "object--street-light"]
+      lines : ["construction--barrier--fence"]
+
+    custom_object_set :
+      trafficsigns : ["regulatory--dual-path-bicycles-and-pedestrians--g1", "regulatory--maximum-speed-limit-30--g1"]
+      instances : []
+      segmentations : ["object--trash-can"]
+    
+    min_score : 0.7
+    max_score : 1
+
+    fact : 0.035
+    path : 'data\\study_area\\test_st_ar'
+
+  #set for SPGG
+  SPGG:
+    custom_feature_set : 
+      trafficsigns : []
+      points : ["object--bench"]
+      lines : ["construction--barrier--fence"]
+
+    custom_object_set :
+      trafficsigns : ["regulatory--dual-path-bicycles-and-pedestrians--g1"]
+      instances : []
+      segmentations : []
+    
+    min_score : 0.7
+    max_score : 1
+
+    fact : 0.035
+    path : 'F:\Privat\Study\TUM\Environmental_Engineering_18.19\WiSe2021\MasterT\GOAT_SPGG\goat\\app\database\data\study_area'
