@@ -5,8 +5,8 @@ Created on Fri Nov  6 13:17:06 2020
 
 @author: Santiago
 """
-def Object_Detection(bbox, values, client_id, max_score, min_score, token, layers, filename):
-    import json, requests
+def Object_Detection(bbox, values, client_id, max_score, min_score, token, layers, filename, path):
+    import json, requests, os
 
     # create our empty geojson
     output = {"type":"FeatureCollection","features":[]}
@@ -59,7 +59,7 @@ def Object_Detection(bbox, values, client_id, max_score, min_score, token, layer
         # update length of data in last call to see if it still remains at 1000 (maximum) indicating a next page
         data_length = len(data['features'])
 
-    with open('{}.geojson'.format(filename), 'w') as outfile:
+    with open((os.path.join(path, '{}.geojson'.format(filename))), 'w') as outfile:
         print('DONE')
         json.dump(output, outfile)
 
@@ -90,7 +90,7 @@ def MapillaryObjFromStudyArea(path, fact, values, client_id, min_score, max_scor
     
     # create result geojson
     output_result = {"type": "FeatureCollection", "features": []}
-    with open(dir_feat + "/" + filename_fin + '.geojson', 'w') as outfile:
+    with open(os.path.join(dir_feat, (filename_fin + '.geojson')), 'w') as outfile:
         json.dump(output_result, outfile)
 
     # disaggregate bbox of shapefile to grid of bboxes
@@ -101,22 +101,22 @@ def MapillaryObjFromStudyArea(path, fact, values, client_id, min_score, max_scor
     # iterate through each bbox
     for bb in bboxes:
         # write geojson file with object for given bbox as request.geojson
-        Object_Detection(bb, values, client_id, max_score, min_score, token, layers, filename)
+        Object_Detection(bb, values, client_id, max_score, min_score, token, layers, filename, dir_feat)
         # open request.geojson
-        with open('request.geojson') as r:
+        with open(os.path.join(dir_feat, (filename + '.geojson'))) as r:
             request = json.load(r)
         # open result.geojson
-        with open(dir_feat + "/" + filename_fin + '.geojson') as res:
+        with open(os.path.join(dir_feat, (filename_fin + '.geojson'))) as res:
             result = json.load(res)
         # append features form request.geojson to result.geojson
         for f in request['features']:
             result['features'].append(f)
         # write down new result.geojson
-        with open(dir_feat + "/" + filename_fin + '.geojson', 'w') as outfile:
+        with open(os.path.join(dir_feat, (filename_fin + '.geojson')), 'w') as outfile:
             json.dump(result, outfile)
         print(filename_fin + '.UPDATED')
         # remove request.geojson
-        os.remove('request.geojson')
+        os.remove(os.path.join(dir_feat, (filename + '.geojson')))
         # sleep for 1 minute
         #time.sleep(60) #60sec
 
@@ -127,6 +127,7 @@ def MapillaryMultiObjectsRequest(client_id, token):
 
     import json, os
     import yaml
+    import geopandas
 
     #import data from config.yaml
     with open('mapil_request_config.yaml') as m:
@@ -135,10 +136,10 @@ def MapillaryMultiObjectsRequest(client_id, token):
 
     #create directory 'data' if not exists
     for area in var:
-        dir_main = 'data/' + area
+        dir_main = os.path.join('data', area)
         if not os.path.exists(dir_main):
             os.mkdir(dir_main)
-        dir_feat = dir_main + '/objects'
+        dir_feat = os.path.join(dir_main, 'objects')
         if not os.path.exists(dir_feat):
             os.mkdir(dir_feat)
         
@@ -160,17 +161,31 @@ def MapillaryMultiObjectsRequest(client_id, token):
                     MapillaryObjFromStudyArea(path, fact, object_, client_id, min_score, max_score, token, v_cat, dir_feat)
 
                     # open request.geojson
-                    with open(dir_feat + '/' + object_ + '.geojson') as r:
+                    with open(os.path.join(dir_feat, (object_ + '.geojson'))) as r:
                         request = json.load(r)
                     # open result.geojson
-                    with open(dir_feat + '/' + v_cat +'.geojson') as res:
+                    with open(os.path.join(dir_feat, (v_cat +'.geojson'))) as res:
                         result = json.load(res)
                     # append features form request.geojson to result.geojson
                     for f in request['features']:
                         result['features'].append(f)
                     # write down new result.geojson
-                    with open(dir_feat + '/' + v_cat +'.geojson', 'w') as outfile:
+                    with open(os.path.join(dir_feat, (v_cat +'.geojson')), 'w') as outfile:
                         json.dump(result, outfile)
                     print(v_cat +'.UPDATED')
                     # remove request.geojson
-                    os.remove(dir_feat + '/' + object_  + '.geojson')
+                    os.remove(os.path.join(dir_feat, (object_  + '.geojson')))
+
+                #remove objects located outside the study area with geopandas
+                #open files with objects and shapefile
+                categ_gjson = geopandas.read_file(os.path.join(dir_feat, (v_cat +'.geojson')))
+                st_area = geopandas.read_file(path + '.shp')
+                #create mask for intersected objects and filter them
+                categ_mask = categ_gjson.within(st_area.loc[0,'geometry'])
+                categ_cut = categ_gjson[categ_mask]
+                #remove initial geojson file and save cut one
+                if categ_cut.empty:
+                    pass
+                else:
+                    os.remove(os.path.join(dir_feat, (v_cat +'.geojson')))
+                    categ_cut.to_file(os.path.join(dir_feat, (v_cat +'.geojson')), driver='GeoJSON')
