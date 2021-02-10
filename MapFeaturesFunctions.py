@@ -3,9 +3,9 @@ Created on Tue Oct 27 11:50:33 2020
 
 @author: Santiago
 """
-def GetFeatures(bbox,values, client_id, token, layers, filename):
+def GetFeatures(bbox, values, client_id, token, layers, filename, path):
 
-    import json, requests
+    import json, requests, os
     # create our empty geojson
     output = {"type":"FeatureCollection","features":[]}
 
@@ -52,7 +52,7 @@ def GetFeatures(bbox,values, client_id, token, layers, filename):
         # update length of data in last call to see if it still remains at 500 (maximum) indicating a next page
         data_length = len(data['features'])
     finalfile = "%s.geojson" % filename
-    with open(finalfile, 'w') as outfile:
+    with open(os.path.join(path, finalfile), 'w') as outfile:
         print('DONE')
         json.dump(output, outfile)
     
@@ -83,7 +83,7 @@ def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers,
    
     # create result geojson
     output_result = {"type": "FeatureCollection", "features": []}
-    with open(dir_feat + '/' + filename_fin + '.geojson', 'w') as outfile:
+    with open(os.path.join(dir_feat, (filename_fin + '.geojson')), 'w') as outfile:
         json.dump(output_result, outfile)
 
     # disaggregate bbox of shapefile to grid of bboxes
@@ -94,23 +94,23 @@ def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers,
     # iterate through each bbox
     for bb in bboxes:
         # write geojson file with object for given bbox as request.geojson
-        GetFeatures(bb, values, client_id, token, layers, filename)
+        GetFeatures(bb, values, client_id, token, layers, filename, dir_feat)
         # open request.geojson
-        with open('request.geojson') as r:
+        with open(os.path.join(dir_feat,(filename + '.geojson'))) as r:
             request = json.load(r)
         # open result.geojson
-        with open(dir_feat + '/' + filename_fin +'.geojson') as res:
+        with open(os.path.join(dir_feat, (filename_fin +'.geojson'))) as res:
             result = json.load(res)
         # append features form request.geojson to result.geojson
         for f in request['features']:
             result['features'].append(f)
         # write down new result.geojson
-        with open(dir_feat + '/' + filename_fin +'.geojson', 'w') as outfile:
+        with open(os.path.join(dir_feat, (filename_fin +'.geojson')), 'w') as outfile:
             json.dump(result, outfile)
         print(filename_fin +'.UPDATED')
         # remove request.geojson
-        os.remove('request.geojson')
-        # sleep for 1 minute
+        os.remove(os.path.join(dir_feat,(filename + '.geojson')))
+        # sleep for 1 minute!!!
         #time.sleep(60) #60sec
 
     return print('DONE')
@@ -126,7 +126,9 @@ def MapillaryMultiFeaturesRequest(client_id, token):
 
     import json, os
     import yaml
-
+    import geopandas
+    
+    
     #import data from config.yaml
     with open('mapil_request_config.yaml') as m:
         config = yaml.safe_load(m)
@@ -135,10 +137,10 @@ def MapillaryMultiFeaturesRequest(client_id, token):
 
     #create directory 'data' if not exists
     for area in var:
-        dir_main = 'data/' + area
+        dir_main = os.path.join('data', area)
         if not os.path.exists(dir_main):
             os.mkdir(dir_main)
-        dir_feat = dir_main + '/features'
+        dir_feat = os.path.join(dir_main, 'features')
         if not os.path.exists(dir_feat):
             os.mkdir(dir_feat)
  
@@ -146,13 +148,11 @@ def MapillaryMultiFeaturesRequest(client_id, token):
         fact = var[area]['fact']
         path = var[area]['path']
 
-        #save backup data existed lines\points??
-
         #create result files for each group of features with name of group
         for v_cat in var[area]['custom_feature_set']:
             if len(var[area]['custom_feature_set'][v_cat]) > 0:
                 output_val_cat = {"type": "FeatureCollection", "features": []}
-                with open(dir_feat + '/' + v_cat + '.geojson', 'w') as outfile:
+                with open(os.path.join(dir_feat, (v_cat +'.geojson')), 'w') as outfile:
                     json.dump(output_val_cat, outfile)
 
                 # make request for each feature in each group
@@ -160,17 +160,32 @@ def MapillaryMultiFeaturesRequest(client_id, token):
                     MapillaryFeaturesFromStudyArea(path, fact, feature, client_id, token, v_cat, dir_feat)
 
                     # open request.geojson
-                    with open(dir_feat + '/' + feature + '.geojson') as r:
+                    with open(os.path.join(dir_feat, (feature + '.geojson'))) as r:
                         request = json.load(r)
                     # open result.geojson
-                    with open(dir_feat + '/' + v_cat +'.geojson') as res:
+                    with open(os.path.join(dir_feat, (v_cat +'.geojson'))) as res:
                         result = json.load(res)
                     # append features form request.geojson to result.geojson
                     for f in request['features']:
                         result['features'].append(f)
                     # write down new result.geojson
-                    with open(dir_feat + '/' + v_cat +'.geojson', 'w') as outfile:
+                    with open(os.path.join(dir_feat, (v_cat +'.geojson')), 'w') as outfile:
                         json.dump(result, outfile)
                     print(v_cat +'.UPDATED')
                     # remove request.geojson
-                    os.remove(dir_feat + '/' + feature + '.geojson')
+                    os.remove(os.path.join(dir_feat, (feature + '.geojson')))
+
+                #remove features located outside the study area with geopandas
+                #open files with features and shapefile
+                categ_gjson = geopandas.read_file(os.path.join(dir_feat, (v_cat +'.geojson')))
+                st_area = geopandas.read_file(path + '.shp')
+                #create mask for intersected features and filter them
+                categ_mask = categ_gjson.within(st_area.loc[0,'geometry'])
+                categ_cut = categ_gjson[categ_mask]
+                #remove initial geojson file and save cut one
+                if categ_cut.empty:
+                    pass
+                else:
+                    os.remove(os.path.join(dir_feat, (v_cat +'.geojson')))
+                    categ_cut.to_file(os.path.join(dir_feat, (v_cat +'.geojson')), driver='GeoJSON')
+
