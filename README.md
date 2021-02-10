@@ -75,6 +75,7 @@ Map object detections are groupped into the following layers:
 >**instances** - Values can be chosen from the points value set. The same as points values in _features_.
 
 >**segmentations** - Values can be chosen from segmentation values data set.
+
 Additional information about variables could be used for request stored in mapillary official site. https://www.mapillary.com/developer/api-documentation/
 
 Example of full object set (trafficsigns for Germany):
@@ -115,9 +116,9 @@ full_object_set = {
 
 **max_score** - Related to object detection. Maximum score of normalized probability of the object detection in image. Value in range (0, 1).Should be higher then **min_score**. Recommended value **1**.
 
-**fact** : Factor for disaggregation of bounding box of study area. Maximum length of the side of the cell in the formed grid. Counted in grad. Depending on the number of requested objects and features, the saturation of the study area with them, the request can be excessively large and excessively can load the Mapillari server. To avoid this, the request area is divided into equal parts and requests are sent for each of them separately, using breaks between them. Depending on the input data, the factor should be adjusted up or down. Default value **0.035**
+**fact** - Factor for disaggregation of bounding box of study area. Maximum length of the side of the cell in the formed grid. Counted in grad. Depending on the number of requested objects and features, the saturation of the study area with them, the request can be excessively large and excessively can load the Mapillari server. To avoid this, the request area is divided into equal parts and requests are sent for each of them separately, using breaks between them. Depending on the input data, the factor should be adjusted up or down. Default value **0.035**
 
-**path** - Is a path to shapefile of study area. Should be presented without extension at the end.
+**path** - is a path to shapefile of study area. Should be presented without extension at the end.
 
 ### Result of request
 Result file of request will be stored in folder **data/City_Name_1/..**. Inside the main directory with the name of the study area there will be two folders _features_ and _objects_ with geojson files with layer names from queries for features and objects.
