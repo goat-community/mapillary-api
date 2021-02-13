@@ -70,6 +70,7 @@ Created on Fri Jan 08 2021
 # (ex. 'regulatory--priority-road--g1') https://www.mapillary.com/developer/api-documentation/#traffic-signs
 # token - token from Mapillary API for authorized request 
 # layers - choose 'trafficsigns' or 'points' or 'lines'
+# dir_feat - main path to place where catalog with returned files will be saved()
 
 def MapillaryFeaturesFromStudyArea(path, fact, values, client_id, token, layers, dir_feat):
 
@@ -127,7 +128,7 @@ def MapillaryMultiFeaturesRequest(client_id, token):
     import json, os
     import yaml
     import geopandas
-    
+    import time
     
     #import data from config.yaml
     with open('mapil_request_config.yaml') as m:
@@ -148,8 +149,13 @@ def MapillaryMultiFeaturesRequest(client_id, token):
         fact = var[area]['fact']
         path = var[area]['path']
 
+        #create metadata file
+        metadata = ["Study area: " + area +"\n", "Datetime of request: " + time.strftime(r"%Y-%m-%d %H:%M:%S", time.localtime()) +"\n",
+        "Path to study area shape file: " + path +"\n", "Factor of studyarea bounding box deaggregation: " + str(fact) +"\n", "Feature set: " + "\n"]
+
         #create result files for each group of features with name of group
         for v_cat in var[area]['custom_feature_set']:
+            metadata.append("- " + str(v_cat) + ": " + str(var[area]['custom_feature_set'][v_cat]) +"\n")
             if len(var[area]['custom_feature_set'][v_cat]) > 0:
                 output_val_cat = {"type": "FeatureCollection", "features": []}
                 with open(os.path.join(dir_feat, (v_cat +'.geojson')), 'w') as outfile:
@@ -179,13 +185,28 @@ def MapillaryMultiFeaturesRequest(client_id, token):
                 #open files with features and shapefile
                 categ_gjson = geopandas.read_file(os.path.join(dir_feat, (v_cat +'.geojson')))
                 st_area = geopandas.read_file(path + '.shp')
+
+                #save SRID for metadata
+                if ("Features SRID: " + str(categ_gjson.crs) + "\n") not in metadata: 
+                    metadata.insert(4, "Features SRID: " + str(categ_gjson.crs) + "\n")
+                if ("Study area SRID: " + str(st_area.crs) + "\n") not in metadata:
+                    metadata.insert(1, "Study area SRID: " + str(st_area.crs) + "\n")
+
                 #create mask for intersected features and filter them
                 categ_mask = categ_gjson.within(st_area.loc[0,'geometry'])
                 categ_cut = categ_gjson[categ_mask]
+
                 #remove initial geojson file and save cut one
                 if categ_cut.empty:
+                    metadata.append("  Number of features: 0" + "\n")
                     pass
                 else:
                     os.remove(os.path.join(dir_feat, (v_cat +'.geojson')))
+                    metadata.append("  Number of features: " + str(len(categ_cut)) + "\n")
                     categ_cut.to_file(os.path.join(dir_feat, (v_cat +'.geojson')), driver='GeoJSON')
+            else:
+                metadata.append("  Number of features: 0" + "\n")
 
+        #write down metadata file
+        with open((os.path.join(dir_feat, ('metadata_features.txt'))), 'w') as md:
+            md.writelines(metadata)
