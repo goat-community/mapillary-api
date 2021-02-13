@@ -128,6 +128,7 @@ def MapillaryMultiObjectsRequest(client_id, token):
     import json, os
     import yaml
     import geopandas
+    import time
 
     #import data from config.yaml
     with open('mapil_request_config.yaml') as m:
@@ -149,8 +150,15 @@ def MapillaryMultiObjectsRequest(client_id, token):
         max_score = var[area]['max_score']
         min_score = var[area]['min_score']
 
+        #create metadata file
+        metadata = ["Study area: " + area +"\n", "Datetime of request: " + time.strftime(r"%Y-%m-%d %H:%M:%S", time.localtime()) +"\n",
+        "Path to study area shape file: " + path +"\n", "Factor of studyarea bounding box deaggregation: " + str(fact) +"\n", 
+        "Minimal score: " + str(min_score) +"\n", "Maximal score: " + str(max_score) +"\n", "Object set: " + "\n"]
+        
+
         #create result files for each group of features with name of group
         for v_cat in var[area]['custom_object_set']:
+            metadata.append("- " + str(v_cat) + ": " + str(var[area]['custom_object_set'][v_cat]) +"\n")
             if len(var[area]['custom_object_set'][v_cat]) > 0:
                 output_val_cat = {"type": "FeatureCollection", "features": []}
                 with open(dir_feat + '/' + v_cat + '.geojson', 'w') as outfile:
@@ -180,12 +188,27 @@ def MapillaryMultiObjectsRequest(client_id, token):
                 #open files with objects and shapefile
                 categ_gjson = geopandas.read_file(os.path.join(dir_feat, (v_cat +'.geojson')))
                 st_area = geopandas.read_file(path + '.shp')
+
+                #save SRID for metadata
+                if ("Objects SRID: " + str(categ_gjson.crs) + "\n") not in metadata: 
+                    metadata.insert(6, "Objects SRID: " + str(categ_gjson.crs) + "\n")
+                if ("Study area SRID: " + str(st_area.crs) + "\n") not in metadata:
+                    metadata.insert(1, "Study area SRID: " + str(st_area.crs) + "\n")
+
                 #create mask for intersected objects and filter them
                 categ_mask = categ_gjson.within(st_area.loc[0,'geometry'])
                 categ_cut = categ_gjson[categ_mask]
                 #remove initial geojson file and save cut one
                 if categ_cut.empty:
+                    metadata.append("  Number of objects: 0" + "\n")
                     pass
                 else:
                     os.remove(os.path.join(dir_feat, (v_cat +'.geojson')))
+                    metadata.append("  Number of objects: " + str(len(categ_cut)) + "\n")
                     categ_cut.to_file(os.path.join(dir_feat, (v_cat +'.geojson')), driver='GeoJSON')
+            else:
+                metadata.append("  Number of objects: 0" + "\n")
+
+        #write metadata file
+        with open((os.path.join(dir_feat, ('metadata_objects.txt'))), 'w') as mo:
+            mo.writelines(metadata)

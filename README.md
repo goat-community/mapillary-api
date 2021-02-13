@@ -120,5 +120,17 @@ full_object_set = {
 
 **path** - is a path to shapefile of study area. Should be presented without extension at the end.
 
+## STEP2: Set your credidentials
+
+In _CredidentialsAPI.py_ file please set your own token and client_id as variables. They are unique and it is possible to get it with registration as developer at Mapillary developer web page. 
+
+## STEP3: Run functions
+
+In _CallsAPI.py_ file run functions **MapFeaturesFunctions.MapillaryMultiFeaturesRequest(client_id, token)** or/and **MapObjectsFunctions.MapillaryMultiObjectsRequest(client_id, token)** for getting features or/and objects respectively. 
+
+## STEP4: Explore result of you request
+
+Next, it is possible to observe results of request in _data_ folder which will be created by script in root directory. All data will be stored in dictionary order, for ex. (**Study_area -> features/objects -> layer_name.geojson**). Metadata for each study area will be stored as a text file together with geojson files, for separately for features and objects.
+
 ### Result of request
 Result file of request will be stored in folder **data/City_Name_1/..**. Inside the main directory with the name of the study area there will be two folders _features_ and _objects_ with geojson files with layer names from queries for features and objects.
