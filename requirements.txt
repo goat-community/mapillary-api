@@ -5,3 +5,5 @@ Python libraries and modules:
 - time
 - PyYAML
 - GeoPandas
+- Shapefile
+- math
